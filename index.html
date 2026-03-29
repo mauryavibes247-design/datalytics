@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Datalytics — Data Analysis Services</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+<!-- ================================================================
+     FRONTEND CONFIG — Edit the API URL here
+     ================================================================ -->
+<script>
+  // Point this to your backend server address
+  const API = 'http://localhost:3000/api';
+</script>
+
+<style>
+:root {
+  --bg:          #08090f;
+  --surface:     #0f1120;
+  --surface2:    #161928;
+  --surface3:    #1c2035;
+  --border:      #252a42;
+  --accent:      #00d4ff;
+  --accent-glow: rgba(0,212,255,0.15);
+  --green:       #00e87a;
+  --purple:      #9b7cff;
+  --orange:      #ff7c3b;
+  --danger:      #ff4d6d;
+  --warning:     #ffd166;
+  --text:        #e2e6f3;
+  --text-muted:  #5e6a8a;
+  --text-dim:    #323a55;
+  --radius:      10px;
+  --radius-lg:   18px;
+  --font-head:   'Syne', sans-serif;
+  --font-body:   'DM Sans', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-body); background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; font-size: 14px; }
+h1,h2,h3,h4,h5 { font-family: var(--font-head); }
+a { text-decoration: none; color: inherit; }
+input,textarea,select { font-family: var(--font-body); }
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* UTILITIES */
+.hidden  { display: none !important; }
+.flex    { display: flex; }
+.flex-col{ flex-direction: column; }
+.center  { align-items: center; justify-content: center; }
+.between { justify-content: space-between; }
+.items-center { align-items: center; }
+.gap-2   { gap: 8px; }  .gap-3 { gap: 12px; } .gap-4 { gap: 16px; }
+.w-full  { width: 100%; }
+.mt-2 { margin-top: 8px; } .mt-3 { margin-top: 14px; } .mt-4 { margin-top: 20px; }
+.mb-3 { margin-bottom: 14px; } .mb-4 { margin-bottom: 20px; }
+.text-accent  { color: var(--accent); }  .text-muted { color: var(--text-muted); }
+.text-green   { color: var(--green);  }  .text-danger{ color: var(--danger); }
+.text-sm { font-size: 12px; } .bold { font-weight: 700; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
+
+/* BUTTONS */
+.btn { display:inline-flex; align-items:center; gap:7px; padding:9px 20px; border-radius:var(--radius); font-family:var(--font-head); font-weight:600; font-size:13px; border:none; cursor:pointer; transition:all .2s; white-space:nowrap; }
+.btn-primary { background:var(--accent); color:#000; }
+.btn-primary:hover { background:#00bde0; box-shadow:0 6px 20px var(--accent-glow); transform:translateY(-1px); }
+.btn-ghost  { background:transparent; color:var(--text); border:1px solid var(--border); }
+.btn-ghost:hover  { border-color:var(--accent); color:var(--accent); }
+.btn-danger { background:var(--danger); color:#fff; }
+.btn-danger:hover { background:#e0364f; }
+.btn-green  { background:var(--green); color:#000; }
+.btn-sm  { padding:6px 13px; font-size:12px; }
+.btn-xs  { padding:4px 10px; font-size:11px; }
+.btn:disabled { opacity:.45; cursor:not-allowed; transform:none!important; }
+
+/* FORMS */
+.form-group { display:flex; flex-direction:column; gap:6px; }
+.form-label { font-family:var(--font-head); font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; }
+.form-input,.form-select,.form-textarea { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; color:var(--text); font-size:14px; width:100%; transition:all .2s; outline:none; }
+.form-input:focus,.form-select:focus,.form-textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow); }
+.form-textarea { resize:vertical; min-height:90px; }
+.form-select option { background:var(--surface2); }
+.form-error { font-size:12px; color:var(--danger); display:none; }
+.form-error.show { display:block; }
+
+/* CARD */
+.card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; }
+.card-sm { padding:14px; border-radius:var(--radius); }
+
+/* BADGE */
+.badge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; font-family:var(--font-head); }
+.badge::before { content:''; width:6px; height:6px; border-radius:50%; background:currentColor; }
+.badge-pending  { background:rgba(255,209,102,.12); color:var(--warning); }
+.badge-active   { background:rgba(0,232,122,.12);   color:var(--green); }
+.badge-resolved { background:rgba(0,212,255,.12);   color:var(--accent); }
+.badge-rejected { background:rgba(255,77,109,.12);  color:var(--danger); }
+
+/* STAT CARD */
+.stat-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; display:flex; flex-direction:column; gap:8px; }
+.stat-label { font-size:11px; color:var(--text-muted); font-family:var(--font-head); text-transform:uppercase; letter-spacing:.06em; }
+.stat-value { font-size:32px; font-family:var(--font-head); font-weight:800; }
+.stat-sub   { font-size:12px; color:var(--text-muted); }
+
+/* TABLE */
+.table-wrap { overflow-x:auto; border-radius:var(--radius-lg); border:1px solid var(--border); }
+table { width:100%; border-collapse:collapse; }
+thead tr { background:var(--surface2); }
+th { padding:12px 16px; text-align:left; font-family:var(--font-head); font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); border-bottom:1px solid var(--border); white-space:nowrap; }
+td { padding:13px 16px; border-bottom:1px solid var(--border); font-size:13px; vertical-align:middle; }
+tbody tr:last-child td { border-bottom:none; }
+tbody tr:hover { background:var(--surface2); }
+
+/* MODAL */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.75); display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px; backdrop-filter:blur(4px); animation:fadeIn .15s ease; }
+.modal { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:28px; width:100%; max-width:520px; max-height:90vh; overflow-y:auto; animation:slideUp .2s ease; }
+.modal-lg { max-width:700px; }
+.modal-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; }
+.modal-title  { font-size:20px; font-weight:700; }
+.modal-close  { background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:20px; padding:2px 6px; border-radius:6px; transition:all .2s; }
+.modal-close:hover { background:var(--surface2); color:var(--text); }
+.modal-footer { margin-top:20px; display:flex; gap:10px; justify-content:flex-end; }
+@keyframes fadeIn  { from{opacity:0} to{opacity:1} }
+@keyframes slideUp { from{transform:translateY(16px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+/* TOAST */
+#toast-container { position:fixed; bottom:24px; right:24px; z-index:2000; display:flex; flex-direction:column; gap:10px; }
+.toast { display:flex; align-items:center; gap:12px; background:var(--surface3); border:1px solid var(--border); border-radius:var(--radius); padding:12px 18px; font-size:13px; box-shadow:0 8px 32px rgba(0,0,0,.5); animation:slideUp .2s ease; min-width:260px; }
+.toast-success { border-color:var(--green); }
+.toast-error   { border-color:var(--danger); }
+.toast-info    { border-color:var(--accent); }
+
+/* LANDING */
+#page-landing { min-height:100vh; display:flex; flex-direction:column; }
+.landing-nav { display:flex; align-items:center; justify-content:space-between; padding:20px 60px; border-bottom:1px solid var(--border); background:rgba(8,9,15,.9); backdrop-filter:blur(12px); position:sticky; top:0; z-index:100; }
+.logo { font-family:var(--font-head); font-size:22px; font-weight:800; }
+.logo span { color:var(--accent); }
+.nav-links { display:flex; gap:24px; align-items:center; }
+.nav-links a { color:var(--text-muted); font-size:14px; transition:all .2s; }
+.nav-links a:hover { color:var(--text); }
+.hero { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:100px 40px 80px; background:radial-gradient(ellipse 800px 500px at 50% 0%,rgba(0,212,255,.07),transparent),radial-gradient(ellipse 600px 400px at 80% 100%,rgba(155,124,255,.05),transparent); }
+.hero-badge { display:inline-flex; align-items:center; gap:8px; background:rgba(0,212,255,.08); border:1px solid rgba(0,212,255,.2); padding:6px 16px; border-radius:20px; font-size:12px; color:var(--accent); font-family:var(--font-head); font-weight:600; margin-bottom:28px; }
+.hero h1 { font-size:clamp(36px,6vw,72px); font-weight:800; line-height:1.1; max-width:800px; margin-bottom:20px; }
+.hero h1 span { color:var(--accent); }
+.hero p { font-size:17px; color:var(--text-muted); max-width:500px; line-height:1.7; margin-bottom:40px; }
+.hero-btns { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; }
+.services-section { padding:80px 60px; }
+.section-label { font-family:var(--font-head); font-size:12px; text-transform:uppercase; letter-spacing:.1em; color:var(--accent); margin-bottom:12px; }
+.section-title { font-size:36px; font-weight:800; margin-bottom:14px; }
+.section-sub   { color:var(--text-muted); font-size:16px; max-width:500px; line-height:1.7; margin-bottom:48px; }
+.services-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:20px; }
+.service-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:28px; transition:all .2s; }
+.service-card:hover { border-color:var(--accent); transform:translateY(-3px); box-shadow:0 12px 40px rgba(0,212,255,.08); }
+.service-icon { font-size:36px; margin-bottom:14px; }
+.service-name { font-size:16px; font-weight:700; font-family:var(--font-head); margin-bottom:8px; }
+.service-desc { color:var(--text-muted); font-size:13px; line-height:1.6; margin-bottom:16px; }
+.service-price { font-family:var(--font-head); font-size:20px; font-weight:800; color:var(--accent); }
+.service-price span { font-size:12px; font-weight:400; color:var(--text-muted); }
+
+/* AUTH */
+#page-login,#page-signup { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:40px 20px; background:radial-gradient(ellipse 600px 400px at 50% 0%,rgba(0,212,255,.06),transparent); }
+.auth-card { width:100%; max-width:420px; }
+.auth-logo { font-family:var(--font-head); font-size:26px; font-weight:800; margin-bottom:6px; }
+.auth-logo span { color:var(--accent); }
+.auth-sub { color:var(--text-muted); font-size:14px; margin-bottom:28px; }
+.auth-sep { display:flex; align-items:center; gap:12px; margin:16px 0; color:var(--text-muted); font-size:12px; }
+.auth-sep::before,.auth-sep::after { content:''; flex:1; height:1px; background:var(--border); }
+.auth-link { color:var(--text-muted); font-size:13px; text-align:center; margin-top:16px; }
+.auth-link a { color:var(--accent); }
+
+/* DASHBOARD */
+#page-customer-dash,#page-admin-dash { display:flex; min-height:100vh; }
+.sidebar { width:240px; min-height:100vh; background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; position:sticky; top:0; height:100vh; overflow-y:auto; flex-shrink:0; }
+.sidebar-logo { padding:22px 20px; border-bottom:1px solid var(--border); }
+.sidebar-user { padding:14px 16px; border-bottom:1px solid var(--border); }
+.sidebar-user .user-name { font-family:var(--font-head); font-weight:700; font-size:13px; }
+.sidebar-user .user-role { font-size:11px; color:var(--text-muted); margin-top:2px; }
+.sidebar-avatar { width:34px; height:34px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-family:var(--font-head); font-weight:700; font-size:13px; color:#000; }
+.sidebar-nav { flex:1; padding:12px 10px; }
+.nav-section-label { font-size:10px; font-family:var(--font-head); text-transform:uppercase; letter-spacing:.08em; color:var(--text-dim); padding:8px 10px 4px; }
+.nav-item { display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:var(--radius); cursor:pointer; font-size:13px; font-family:var(--font-head); font-weight:600; color:var(--text-muted); transition:all .2s; margin-bottom:2px; border:none; background:none; width:100%; text-align:left; }
+.nav-item:hover  { background:var(--surface2); color:var(--text); }
+.nav-item.active { background:var(--accent-glow); color:var(--accent); }
+.nav-icon { font-size:16px; width:20px; text-align:center; }
+.nav-badge { margin-left:auto; background:var(--danger); color:#fff; font-size:10px; padding:1px 6px; border-radius:10px; }
+.sidebar-footer { padding:14px 10px; border-top:1px solid var(--border); }
+.dash-main   { flex:1; overflow-y:auto; }
+.dash-topbar { display:flex; align-items:center; justify-content:space-between; padding:16px 28px; border-bottom:1px solid var(--border); background:var(--surface); }
+.dash-topbar h2 { font-size:18px; font-weight:700; }
+.dash-content { padding:28px; }
+.dash-section { display:none; }
+.dash-section.active { display:block; animation:fadeIn .2s ease; }
+.divider { height:1px; background:var(--border); margin:20px 0; }
+
+/* CHAT */
+.chat-wrap { display:flex; height:calc(100vh - 130px); background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+.chat-sidebar { width:260px; border-right:1px solid var(--border); display:flex; flex-direction:column; }
+.chat-sidebar-header { padding:16px; border-bottom:1px solid var(--border); font-family:var(--font-head); font-weight:700; font-size:14px; }
+.chat-list { flex:1; overflow-y:auto; }
+.chat-list-item { padding:12px 16px; cursor:pointer; border-bottom:1px solid var(--border); transition:all .2s; }
+.chat-list-item:hover  { background:var(--surface2); }
+.chat-list-item.active { background:var(--surface3); border-left:3px solid var(--accent); }
+.chat-list-name    { font-family:var(--font-head); font-weight:700; font-size:13px; margin-bottom:3px; }
+.chat-list-preview { font-size:11px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.chat-main   { flex:1; display:flex; flex-direction:column; }
+.chat-header { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; }
+.chat-msgs   { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:14px; }
+.chat-msg { max-width:70%; display:flex; flex-direction:column; gap:4px; }
+.chat-msg.mine   { align-self:flex-end; align-items:flex-end; }
+.chat-msg.theirs { align-self:flex-start; align-items:flex-start; }
+.chat-bubble { padding:10px 14px; border-radius:16px; font-size:13px; line-height:1.5; }
+.chat-msg.mine   .chat-bubble { background:var(--accent); color:#000; border-radius:16px 4px 16px 16px; }
+.chat-msg.theirs .chat-bubble { background:var(--surface2); color:var(--text); border-radius:4px 16px 16px 16px; }
+.chat-time { font-size:10px; color:var(--text-muted); }
+.chat-input-area { padding:16px; border-top:1px solid var(--border); display:flex; gap:10px; }
+.chat-input-area .form-input { flex:1; }
+.chat-empty { flex:1; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; color:var(--text-muted); }
+.avatar { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:var(--font-head); font-weight:700; font-size:15px; }
+.avatar-cyan   { background:rgba(0,212,255,.15); color:var(--accent); }
+.avatar-purple { background:rgba(155,124,255,.15); color:var(--purple); }
+.dot-live { width:8px; height:8px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(0,232,122,.4)} 50%{box-shadow:0 0 0 6px rgba(0,232,122,0)} }
+
+/* SPINNER */
+.spinner { display:inline-block; width:18px; height:18px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .6s linear infinite; }
+@keyframes spin { to{transform:rotate(360deg)} }
+.loading-row td { text-align:center; padding:30px; color:var(--text-muted); }
+</style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<!-- ════════════════════════════════════════════════════════
+     LANDING PAGE
+     ════════════════════════════════════════════════════════ -->
+<div id="page-landing">
+  <nav class="landing-nav">
+    <div class="logo">Data<span>lytics</span></div>
+    <div class="nav-links">
+      <a href="#" onclick="scrollToServices()">Services</a>
+      <a href="#" onclick="scrollToServices()">Pricing</a>
+      <button class="btn btn-ghost btn-sm" onclick="showPage('login')">Sign In</button>
+      <button class="btn btn-primary btn-sm" onclick="showPage('signup')">Get Started →</button>
+    </div>
+  </nav>
+  <section class="hero">
+    <div class="hero-badge">⚡ AI-Powered Data Analysis</div>
+    <h1>Turn Raw Data Into<br><span>Business Intelligence</span></h1>
+    <p>Custom analytics, dashboards & ML models — delivered fast.</p>
+    <div class="hero-btns">
+      <button class="btn btn-primary" style="padding:13px 28px;font-size:15px" onclick="showPage('signup')">Start Free →</button>
+      <button class="btn btn-ghost"   style="padding:13px 28px;font-size:15px" onclick="scrollToServices()">View Services</button>
+    </div>
+  </section>
+  <section class="services-section" id="services-section">
+    <div class="section-label">What We Offer</div>
+    <h2 class="section-title">Our Services</h2>
+    <p class="section-sub">Request, track, and communicate — all in one place.</p>
+    <div class="services-grid" id="landing-services-grid"><div class="spinner"></div></div>
+  </section>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     LOGIN
+     ════════════════════════════════════════════════════════ -->
+<div id="page-login" class="hidden">
+  <div class="auth-card card">
+    <div class="auth-logo">Data<span>lytics</span></div>
+    <div class="auth-sub">Welcome back. Sign in to your account.</div>
+    <div class="flex flex-col gap-3">
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="login-email" type="email" placeholder="you@company.com"></div>
+      <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="login-pass" type="password" placeholder="••••••••"><div class="form-error" id="login-err">Invalid email or password.</div></div>
+      <button class="btn btn-primary w-full mt-2" style="justify-content:center" id="login-btn" onclick="doLogin()">Sign In</button>
+    </div>
+    <div class="auth-sep">or</div>
+    <button class="btn btn-ghost w-full" style="justify-content:center" onclick="quickLogin('priya@acmecorp.com','test123')">👤 Demo Customer</button>
+    <button class="btn btn-ghost w-full mt-2" style="justify-content:center" onclick="quickLogin('admin@datalytics.io','admin123')">🛡️ Demo Admin</button>
+    <div class="auth-link mt-3">No account? <a href="#" onclick="showPage('signup')">Sign up</a></div>
+    <div class="auth-link mt-2"><a href="#" onclick="showPage('landing')">← Back to home</a></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     SIGNUP
+     ════════════════════════════════════════════════════════ -->
+<div id="page-signup" class="hidden">
+  <div class="auth-card card">
+    <div class="auth-logo">Data<span>lytics</span></div>
+    <div class="auth-sub">Create your free account.</div>
+    <div class="flex flex-col gap-3">
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="signup-name" type="text" placeholder="John Doe"></div>
+        <div class="form-group"><label class="form-label">Company</label><input class="form-input" id="signup-company" type="text" placeholder="Acme Inc."></div>
+      </div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="signup-email" type="email" placeholder="you@company.com"></div>
+      <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="signup-pass" type="password" placeholder="Min. 6 characters"><div class="form-error" id="signup-err"></div></div>
+      <button class="btn btn-primary w-full mt-2" style="justify-content:center" id="signup-btn" onclick="doSignup()">Create Account →</button>
+    </div>
+    <div class="auth-link mt-3">Already have an account? <a href="#" onclick="showPage('login')">Sign in</a></div>
+    <div class="auth-link mt-2"><a href="#" onclick="showPage('landing')">← Back to home</a></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     CUSTOMER DASHBOARD
+     ════════════════════════════════════════════════════════ -->
+<div id="page-customer-dash" class="hidden">
+  <div class="sidebar">
+    <div class="sidebar-logo"><div class="logo">Data<span>lytics</span></div></div>
+    <div class="sidebar-user flex gap-2 items-center">
+      <div class="sidebar-avatar" id="cust-avatar">?</div>
+      <div><div class="user-name" id="cust-name">—</div><div class="user-role">Customer</div></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <button class="nav-item active" onclick="custNav('overview',this)"><span class="nav-icon">🏠</span><span>Overview</span></button>
+      <button class="nav-item" onclick="custNav('services',this)"><span class="nav-icon">📦</span><span>Services</span></button>
+      <button class="nav-item" onclick="custNav('requests',this)"><span class="nav-icon">📋</span><span>My Requests</span></button>
+      <button class="nav-item" onclick="custNav('messages',this)"><span class="nav-icon">💬</span><span>Messages</span></button>
+      <div class="nav-section-label mt-3">Account</div>
+      <button class="nav-item" onclick="custNav('profile',this)"><span class="nav-icon">👤</span><span>Profile</span></button>
+    </nav>
+    <div class="sidebar-footer"><button class="nav-item" onclick="doLogout()"><span class="nav-icon">🚪</span><span>Logout</span></button></div>
+  </div>
+  <div class="dash-main">
+    <div class="dash-topbar"><h2 id="cust-topbar">Overview</h2><div class="flex gap-3 items-center"><div class="dot-live"></div><span class="text-muted text-sm">Live</span></div></div>
+    <div class="dash-content">
+
+      <!-- Overview -->
+      <div class="dash-section active" id="cust-sec-overview">
+        <div class="grid-3 mb-4">
+          <div class="stat-card"><div class="stat-label">Total Requests</div><div class="stat-value text-accent" id="cs-total">—</div></div>
+          <div class="stat-card"><div class="stat-label">Active</div><div class="stat-value text-green" id="cs-active">—</div></div>
+          <div class="stat-card"><div class="stat-label">Completed</div><div class="stat-value text-purple" id="cs-done">—</div></div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="flex between items-center mb-3"><h3 style="font-size:15px">Recent Requests</h3><button class="btn btn-ghost btn-xs" onclick="custNav('requests',null)">All →</button></div>
+            <div id="cust-recent-reqs"><div class="text-muted text-sm">Loading...</div></div>
+          </div>
+          <div class="card">
+            <h3 style="font-size:15px;margin-bottom:14px">Quick Actions</h3>
+            <div class="flex flex-col gap-3">
+              <button class="btn btn-primary w-full" style="justify-content:center" onclick="custNav('services',null)">📦 Request a Service</button>
+              <button class="btn btn-ghost  w-full" style="justify-content:center" onclick="custNav('messages',null)">💬 Message Admin</button>
+              <button class="btn btn-ghost  w-full" style="justify-content:center" onclick="custNav('requests',null)">📋 Track Requests</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Services -->
+      <div class="dash-section" id="cust-sec-services">
+        <p class="text-muted mb-4">Browse and request any service below.</p>
+        <div class="services-grid" id="cust-services-grid"><div class="spinner"></div></div>
+      </div>
+
+      <!-- Requests -->
+      <div class="dash-section" id="cust-sec-requests">
+        <div class="flex between items-center mb-3"><p class="text-muted">All your service requests.</p><button class="btn btn-primary btn-sm" onclick="openRequestModal()">+ New Request</button></div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Service</th><th>Status</th><th>Priority</th><th>Date</th><th>Admin Note</th><th></th></tr></thead>
+          <tbody id="cust-req-table"><tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="dash-section" id="cust-sec-messages">
+        <div class="chat-wrap">
+          <div class="chat-sidebar">
+            <div class="chat-sidebar-header">Inbox</div>
+            <div class="chat-list">
+              <div class="chat-list-item active"><div class="chat-list-name">Admin Support</div><div class="chat-list-preview">Your project updates</div></div>
+            </div>
+          </div>
+          <div class="chat-main">
+            <div class="chat-header">
+              <div class="avatar avatar-cyan">A</div>
+              <div><div style="font-family:var(--font-head);font-weight:700;font-size:14px">Datalytics Admin</div><div class="text-sm text-muted flex gap-2 items-center"><div class="dot-live"></div>Online</div></div>
+            </div>
+            <div class="chat-msgs" id="cust-chat-msgs"><div class="chat-empty">📭<span>No messages yet.</span></div></div>
+            <div class="chat-input-area">
+              <input class="form-input" id="cust-msg-input" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendCustMsg()">
+              <button class="btn btn-primary" onclick="sendCustMsg()">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile -->
+      <div class="dash-section" id="cust-sec-profile">
+        <div class="card" style="max-width:500px">
+          <h3 style="font-size:17px;margin-bottom:20px">Account Profile</h3>
+          <div class="flex flex-col gap-3">
+            <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="prof-name"></div>
+            <div class="form-group"><label class="form-label">Company</label><input class="form-input" id="prof-company"></div>
+            <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="prof-email" type="email"></div>
+            <div class="divider"></div>
+            <div class="form-group"><label class="form-label">New Password</label><input class="form-input" id="prof-pass" type="password" placeholder="Leave blank to keep current"></div>
+            <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     ADMIN DASHBOARD
+     ════════════════════════════════════════════════════════ -->
+<div id="page-admin-dash" class="hidden">
+  <div class="sidebar">
+    <div class="sidebar-logo"><div class="logo">Data<span>lytics</span> <span style="font-size:10px;background:var(--accent);color:#000;padding:2px 6px;border-radius:4px;vertical-align:middle">ADMIN</span></div></div>
+    <div class="sidebar-user flex gap-2 items-center">
+      <div class="sidebar-avatar" style="background:var(--purple);color:#fff">A</div>
+      <div><div class="user-name" id="admin-name">Admin</div><div class="user-role">Super Admin</div></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Dashboard</div>
+      <button class="nav-item active" onclick="adminNav('overview',this)"><span class="nav-icon">🏠</span><span>Overview</span></button>
+      <button class="nav-item" onclick="adminNav('customers',this)"><span class="nav-icon">👥</span><span>Customers</span></button>
+      <button class="nav-item" onclick="adminNav('requests',this)"><span class="nav-icon">📋</span><span>Requests</span><span class="nav-badge" id="admin-req-badge">0</span></button>
+      <button class="nav-item" onclick="adminNav('messages',this)"><span class="nav-icon">💬</span><span>Messages</span></button>
+      <div class="nav-section-label mt-3">Manage</div>
+      <button class="nav-item" onclick="adminNav('services',this)"><span class="nav-icon">📦</span><span>Services</span></button>
+    </nav>
+    <div class="sidebar-footer"><button class="nav-item" onclick="doLogout()"><span class="nav-icon">🚪</span><span>Logout</span></button></div>
+  </div>
+  <div class="dash-main">
+    <div class="dash-topbar"><h2 id="admin-topbar">Overview</h2><div class="flex gap-3 items-center"><div class="dot-live"></div><span class="text-muted text-sm">Admin Panel</span></div></div>
+    <div class="dash-content">
+
+      <!-- Overview -->
+      <div class="dash-section active" id="admin-sec-overview">
+        <div class="grid-4 mb-4">
+          <div class="stat-card"><div class="stat-label">Customers</div><div class="stat-value text-accent" id="as-customers">—</div></div>
+          <div class="stat-card"><div class="stat-label">Requests</div><div class="stat-value text-purple" id="as-requests">—</div></div>
+          <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-value" style="color:var(--warning)" id="as-pending">—</div></div>
+          <div class="stat-card"><div class="stat-label">Active</div><div class="stat-value text-green" id="as-active">—</div></div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="flex between items-center mb-3"><h3 style="font-size:15px">Recent Requests</h3><button class="btn btn-ghost btn-xs" onclick="adminNav('requests',null)">All →</button></div>
+            <div id="admin-recent-reqs"><div class="spinner"></div></div>
+          </div>
+          <div class="card">
+            <div class="flex between items-center mb-3"><h3 style="font-size:15px">Recent Customers</h3><button class="btn btn-ghost btn-xs" onclick="adminNav('customers',null)">All →</button></div>
+            <div id="admin-recent-custs"><div class="spinner"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Customers -->
+      <div class="dash-section" id="admin-sec-customers">
+        <div class="flex between items-center mb-3">
+          <p class="text-muted">All registered customers.</p>
+          <input class="form-input" style="max-width:220px" placeholder="🔍 Search..." id="cust-search" oninput="filterCustomers()">
+        </div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Name</th><th>Company</th><th>Email</th><th>Joined</th><th>Requests</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="admin-cust-table"><tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- Requests -->
+      <div class="dash-section" id="admin-sec-requests">
+        <div class="flex between items-center mb-3">
+          <p class="text-muted">Manage all service requests.</p>
+          <select class="form-select" style="max-width:180px" onchange="loadAdminRequests(this.value)">
+            <option value="all">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="active">Active</option>
+            <option value="resolved">Resolved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Customer</th><th>Service</th><th>Message</th><th>Priority</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="admin-req-table"><tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="dash-section" id="admin-sec-messages">
+        <div class="chat-wrap">
+          <div class="chat-sidebar">
+            <div class="chat-sidebar-header">Conversations</div>
+            <div class="chat-list" id="admin-chat-list"><div class="text-muted text-sm" style="padding:14px">No conversations yet.</div></div>
+          </div>
+          <div class="chat-main">
+            <div class="chat-header" id="admin-chat-header"><div class="chat-empty" style="flex:1">Select a customer to chat</div></div>
+            <div class="chat-msgs" id="admin-chat-msgs"></div>
+            <div class="chat-input-area">
+              <input class="form-input" id="admin-msg-input" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendAdminMsg()">
+              <button class="btn btn-primary" onclick="sendAdminMsg()">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Services -->
+      <div class="dash-section" id="admin-sec-services">
+        <div class="flex between items-center mb-3">
+          <p class="text-muted">Manage your service catalog.</p>
+          <button class="btn btn-primary btn-sm" onclick="openServiceModal()">+ Add Service</button>
+        </div>
+        <div class="services-grid" id="admin-services-grid"><div class="spinner"></div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     MODALS
+     ════════════════════════════════════════════════════════ -->
+
+<!-- Request Modal -->
+<div class="modal-overlay hidden" id="modal-request">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Request a Service</div><button class="modal-close" onclick="closeModal('modal-request')">✕</button></div>
+    <div class="flex flex-col gap-3">
+      <div class="form-group"><label class="form-label">Service</label><select class="form-select" id="req-svc"></select></div>
+      <div class="form-group"><label class="form-label">Priority</label>
+        <select class="form-select" id="req-priority"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Your Requirement</label><textarea class="form-textarea" id="req-msg" placeholder="Describe your data, goals, timeline..."></textarea></div>
+      <div class="form-error" id="req-err"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-request')">Cancel</button><button class="btn btn-primary" id="req-submit-btn" onclick="submitRequest()">Submit Request</button></div>
+  </div>
+</div>
+
+<!-- Admin: Update Request -->
+<div class="modal-overlay hidden" id="modal-update-req">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Update Request</div><button class="modal-close" onclick="closeModal('modal-update-req')">✕</button></div>
+    <div class="flex flex-col gap-3">
+      <div class="form-group"><label class="form-label">Status</label>
+        <select class="form-select" id="upd-status"><option value="pending">Pending</option><option value="active">Active</option><option value="resolved">Resolved</option><option value="rejected">Rejected</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Priority</label>
+        <select class="form-select" id="upd-priority"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Note for Customer</label><textarea class="form-textarea" id="upd-note"></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-update-req')">Cancel</button><button class="btn btn-primary" onclick="saveReqUpdate()">Save Update</button></div>
+  </div>
+</div>
+
+<!-- Admin: Add/Edit Service -->
+<div class="modal-overlay hidden" id="modal-service">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="svc-modal-title">Add Service</div><button class="modal-close" onclick="closeModal('modal-service')">✕</button></div>
+    <div class="flex flex-col gap-3">
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="svc-name" placeholder="BI Report"></div>
+        <div class="form-group"><label class="form-label">Icon (emoji)</label><input class="form-input" id="svc-icon" placeholder="📊"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="svc-desc"></textarea></div>
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label">Price (₹)</label><input class="form-input" id="svc-price" type="number"></div>
+        <div class="form-group"><label class="form-label">Delivery</label><input class="form-input" id="svc-delivery" placeholder="3–5 days"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Category</label>
+        <select class="form-select" id="svc-cat"><option value="reporting">Reporting</option><option value="ml">Machine Learning</option><option value="data">Data Engineering</option><option value="consulting">Consulting</option></select>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-service')">Cancel</button><button class="btn btn-primary" id="svc-save-btn" onclick="saveService()">Save</button></div>
+  </div>
+</div>
+
+<!-- ================================================================
+     JAVASCRIPT — All API calls and UI logic
+     ================================================================ -->
+<script>
+
+// ── SESSION ──────────────────────────────────────────────────────
+let SESSION = { role: null, user: null }; // role: 'admin' | 'customer'
+let adminChatTarget = null; // customer object currently chatting with
+let editingReqId = null;
+let editingSvcId = null;
+let allCustomers = []; // cached for search
+
+// ── PAGE ROUTER ───────────────────────────────────────────────────
+const PAGES = ['landing','login','signup','customer-dash','admin-dash'];
+function showPage(p) {
+  PAGES.forEach(id => document.getElementById('page-'+id)?.classList.add('hidden'));
+  document.getElementById('page-'+p)?.classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────
+function toast(msg, type='info') {
+  const icons = { success:'✅', error:'❌', info:'ℹ️' };
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+// ── MODALS ────────────────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+// ── HELPERS ───────────────────────────────────────────────────────
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-IN') : '—'; }
+function loading(id, cols) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = cols
+    ? `<tr class="loading-row"><td colspan="${cols}"><div class="spinner"></div></td></tr>`
+    : '<div class="spinner"></div>';
+}
+
+// ── API HELPER ────────────────────────────────────────────────────
+async function api(method, path, body) {
+  try {
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    const res  = await fetch(API + path, opts);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Server error');
+    return data;
+  } catch (err) {
+    toast(err.message, 'error');
+    throw err;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// AUTH
+// ════════════════════════════════════════════════════════════════
+async function doLogin() {
+  const email    = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-pass').value;
+  const errEl    = document.getElementById('login-err');
+  const btn      = document.getElementById('login-btn');
+  errEl.classList.remove('show');
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  try {
+    const data = await api('POST', '/auth/login', { email, password });
+    SESSION = { role: data.role, user: data.user };
+    if (data.role === 'admin') { loadAdminDash(); showPage('admin-dash'); }
+    else                       { loadCustomerDash(); showPage('customer-dash'); }
+    toast('Welcome back, ' + data.user.name + '! 👋', 'success');
+  } catch { errEl.classList.add('show'); }
+  btn.disabled = false; btn.textContent = 'Sign In';
+}
+
+function quickLogin(email, pass) {
+  document.getElementById('login-email').value = email;
+  document.getElementById('login-pass').value  = pass;
+  doLogin();
+}
+
+async function doSignup() {
+  const name    = document.getElementById('signup-name').value.trim();
+  const company = document.getElementById('signup-company').value.trim();
+  const email   = document.getElementById('signup-email').value.trim();
+  const password= document.getElementById('signup-pass').value;
+  const errEl   = document.getElementById('signup-err');
+  const btn     = document.getElementById('signup-btn');
+  errEl.classList.remove('show');
+  if (!name || !email || !password) { errEl.textContent='Fill all required fields.'; errEl.classList.add('show'); return; }
+  btn.disabled = true; btn.textContent = 'Creating...';
+  try {
+    const data = await api('POST', '/auth/signup', { name, company, email, password });
+    SESSION = { role: 'customer', user: data.user };
+    loadCustomerDash();
+    showPage('customer-dash');
+    toast('Welcome, ' + data.user.name + '! 🎉', 'success');
+  } catch(e) { errEl.textContent = e.message; errEl.classList.add('show'); }
+  btn.disabled = false; btn.textContent = 'Create Account →';
+}
+
+function doLogout() {
+  SESSION = { role: null, user: null };
+  adminChatTarget = null;
+  showPage('landing');
+  toast('Signed out.', 'info');
+}
+
+// ════════════════════════════════════════════════════════════════
+// CUSTOMER DASHBOARD
+// ════════════════════════════════════════════════════════════════
+function loadCustomerDash() {
+  const u = SESSION.user;
+  document.getElementById('cust-name').textContent   = u.name;
+  document.getElementById('cust-avatar').textContent = u.name[0].toUpperCase();
+  document.getElementById('prof-name').value    = u.name;
+  document.getElementById('prof-company').value = u.company || '';
+  document.getElementById('prof-email').value   = u.email;
+  loadCustOverview();
+  loadCustServices();
+}
+
+function custNav(section, btn) {
+  document.querySelectorAll('#page-customer-dash .nav-item').forEach(i => i.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  else document.querySelectorAll('#page-customer-dash .nav-item').forEach(i => {
+    if (i.getAttribute('onclick')?.includes(`'${section}'`)) i.classList.add('active');
+  });
+  document.querySelectorAll('#page-customer-dash .dash-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('cust-sec-'+section).classList.add('active');
+  const labels = { overview:'Overview', services:'Services', requests:'My Requests', messages:'Messages', profile:'Profile' };
+  document.getElementById('cust-topbar').textContent = labels[section] || section;
+  if (section === 'requests') loadCustRequests();
+  if (section === 'messages') loadCustMessages();
+}
+
+async function loadCustOverview() {
+  const reqs = await api('GET', `/requests/customer/${SESSION.user.id}`);
+  document.getElementById('cs-total').textContent  = reqs.length;
+  document.getElementById('cs-active').textContent = reqs.filter(r=>r.status==='active').length;
+  document.getElementById('cs-done').textContent   = reqs.filter(r=>r.status==='resolved').length;
+  const el = document.getElementById('cust-recent-reqs');
+  if (!reqs.length) { el.innerHTML='<div class="text-muted text-sm">No requests yet.</div>'; return; }
+  el.innerHTML = reqs.slice(0,3).map(r => `
+    <div class="flex between items-center" style="padding:10px 0;border-bottom:1px solid var(--border)">
+      <div><div style="font-size:13px;font-weight:600">${esc(r.service_icon)} ${esc(r.service_name)}</div><div class="text-sm text-muted">${fmtDate(r.created_at)}</div></div>
+      <span class="badge badge-${r.status}">${r.status}</span>
+    </div>`).join('');
+}
+
+async function loadCustServices() {
+  const svcs = await api('GET', '/services');
+  const grid = document.getElementById('cust-services-grid');
+  grid.innerHTML = svcs.map(s => `
+    <div class="service-card">
+      <div class="service-icon">${esc(s.icon)}</div>
+      <div class="service-name">${esc(s.name)}</div>
+      <div class="service-desc">${esc(s.description)}</div>
+      <div class="flex between items-center mt-3">
+        <div class="service-price">${esc(s.currency)}${Number(s.price).toLocaleString()} <span>/ ${esc(s.delivery)}</span></div>
+        <button class="btn btn-primary btn-sm" onclick="openRequestModal(${s.id})">Request →</button>
+      </div>
+    </div>`).join('');
+}
+
+async function loadCustRequests() {
+  loading('cust-req-table', 6);
+  const reqs = await api('GET', `/requests/customer/${SESSION.user.id}`);
+  const tbody = document.getElementById('cust-req-table');
+  if (!reqs.length) { tbody.innerHTML='<tr><td colspan="6" class="text-muted">No requests yet.</td></tr>'; return; }
+  tbody.innerHTML = reqs.map(r => `<tr>
+    <td><b>${esc(r.service_icon)} ${esc(r.service_name)}</b></td>
+    <td><span class="badge badge-${r.status}">${r.status}</span></td>
+    <td><span style="font-size:12px;color:var(--warning)">${r.priority}</span></td>
+    <td class="text-muted">${fmtDate(r.created_at)}</td>
+    <td style="max-width:180px;font-size:12px;color:var(--text-muted)">${esc(r.admin_note)||'—'}</td>
+    <td><button class="btn btn-danger btn-xs" onclick="cancelRequest(${r.id})">Cancel</button></td>
+  </tr>`).join('');
+}
+
+async function cancelRequest(id) {
+  if (!confirm('Cancel this request?')) return;
+  await api('DELETE', `/requests/${id}`);
+  toast('Request cancelled.', 'info');
+  loadCustRequests();
+  loadCustOverview();
+}
+
+async function loadCustMessages() {
+  const msgs = await api('GET', `/messages/${SESSION.user.id}`);
+  const el   = document.getElementById('cust-chat-msgs');
+  if (!msgs.length) { el.innerHTML='<div class="chat-empty">📭<span>No messages yet.</span></div>'; return; }
+  el.innerHTML = msgs.map(m => {
+    const mine = m.from_type === 'customer' && m.from_id == SESSION.user.id;
+    return `<div class="chat-msg ${mine?'mine':'theirs'}">
+      <div class="chat-bubble">${esc(m.body)}</div>
+      <div class="chat-time">${fmtDate(m.created_at)}</div>
+    </div>`;
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+async function sendCustMsg() {
+  const input = document.getElementById('cust-msg-input');
+  const body  = input.value.trim();
+  if (!body) return;
+  await api('POST', '/messages', { from_type:'customer', from_id: SESSION.user.id, to_type:'admin', to_id:1, body });
+  input.value = '';
+  loadCustMessages();
+}
+
+async function saveProfile() {
+  const u = SESSION.user;
+  const body = {
+    name:    document.getElementById('prof-name').value.trim()    || u.name,
+    company: document.getElementById('prof-company').value.trim(),
+    email:   document.getElementById('prof-email').value.trim()   || u.email,
+  };
+  const pass = document.getElementById('prof-pass').value;
+  if (pass.length >= 6) body.password = pass;
+  const updated = await api('PUT', `/customers/${u.id}`, body);
+  SESSION.user = { ...SESSION.user, ...updated };
+  document.getElementById('cust-name').textContent = updated.name;
+  toast('Profile updated!', 'success');
+}
+
+// ── Request Modal ────────────────────────────────────────────────
+async function openRequestModal(serviceId) {
+  const svcs = await api('GET', '/services');
+  const sel  = document.getElementById('req-svc');
+  sel.innerHTML = svcs.map(s => `<option value="${s.id}">${s.icon} ${s.name} — ₹${Number(s.price).toLocaleString()}</option>`).join('');
+  if (serviceId) sel.value = serviceId;
+  document.getElementById('req-msg').value = '';
+  document.getElementById('req-err').classList.remove('show');
+  openModal('modal-request');
+}
+
+async function submitRequest() {
+  const service_id = document.getElementById('req-svc').value;
+  const message    = document.getElementById('req-msg').value.trim();
+  const priority   = document.getElementById('req-priority').value;
+  const errEl      = document.getElementById('req-err');
+  const btn        = document.getElementById('req-submit-btn');
+  if (!message) { errEl.textContent='Please describe your requirement.'; errEl.classList.add('show'); return; }
+  btn.disabled = true; btn.textContent = 'Submitting...';
+  try {
+    await api('POST', '/requests', { customer_id: SESSION.user.id, service_id, message, priority });
+    closeModal('modal-request');
+    toast('Request submitted! 🎉', 'success');
+    loadCustRequests();
+    loadCustOverview();
+  } catch(e) { errEl.textContent = e.message; errEl.classList.add('show'); }
+  btn.disabled = false; btn.textContent = 'Submit Request';
+}
+
+// ════════════════════════════════════════════════════════════════
+// ADMIN DASHBOARD
+// ════════════════════════════════════════════════════════════════
+function loadAdminDash() {
+  document.getElementById('admin-name').textContent = SESSION.user.name;
+  loadAdminOverview();
+  loadAdminCustomers();
+  loadAdminRequests('all');
+  loadAdminThreads();
+  loadAdminServices();
+}
+
+function adminNav(section, btn) {
+  document.querySelectorAll('#page-admin-dash .nav-item').forEach(i => i.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  else document.querySelectorAll('#page-admin-dash .nav-item').forEach(i => {
+    if (i.getAttribute('onclick')?.includes(`'${section}'`)) i.classList.add('active');
+  });
+  document.querySelectorAll('#page-admin-dash .dash-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('admin-sec-'+section).classList.add('active');
+  const labels = { overview:'Overview', customers:'Customers', requests:'Requests', messages:'Messages', services:'Services' };
+  document.getElementById('admin-topbar').textContent = labels[section] || section;
+}
+
+async function loadAdminOverview() {
+  const stats = await api('GET', '/stats');
+  document.getElementById('as-customers').textContent = stats.total_customers;
+  document.getElementById('as-requests').textContent  = stats.total_requests;
+  document.getElementById('as-pending').textContent   = stats.pending;
+  document.getElementById('as-active').textContent    = stats.active;
+  document.getElementById('admin-req-badge').textContent = stats.pending;
+
+  const reqs  = await api('GET', '/requests');
+  const custs = await api('GET', '/customers');
+
+  document.getElementById('admin-recent-reqs').innerHTML = reqs.slice(0,4).map(r => `
+    <div class="flex between items-center" style="padding:10px 0;border-bottom:1px solid var(--border)">
+      <div><div style="font-size:13px;font-weight:600">${esc(r.customer_name)}</div><div class="text-sm text-muted">${esc(r.service_name)}</div></div>
+      <span class="badge badge-${r.status}">${r.status}</span>
+    </div>`).join('') || '<div class="text-muted text-sm">No requests.</div>';
+
+  document.getElementById('admin-recent-custs').innerHTML = custs.slice(0,4).map(c => `
+    <div class="flex gap-2 items-center" style="padding:10px 0;border-bottom:1px solid var(--border)">
+      <div class="avatar avatar-cyan">${c.name[0]}</div>
+      <div><div style="font-size:13px;font-weight:600">${esc(c.name)}</div><div class="text-sm text-muted">${esc(c.company||c.email)}</div></div>
+    </div>`).join('') || '<div class="text-muted text-sm">No customers.</div>';
+}
+
+async function loadAdminCustomers() {
+  allCustomers = await api('GET', '/customers');
+  renderCustomerTable(allCustomers);
+}
+
+function filterCustomers() {
+  const q = document.getElementById('cust-search').value.toLowerCase();
+  renderCustomerTable(allCustomers.filter(c =>
+    c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || (c.company||'').toLowerCase().includes(q)
+  ));
+}
+
+function renderCustomerTable(custs) {
+  const tbody = document.getElementById('admin-cust-table');
+  if (!custs.length) { tbody.innerHTML='<tr><td colspan="7" class="text-muted">No customers found.</td></tr>'; return; }
+  tbody.innerHTML = custs.map(c => `<tr>
+    <td><div class="flex gap-2 items-center"><div class="avatar avatar-cyan" style="width:32px;height:32px;font-size:12px">${c.name[0]}</div><span style="font-weight:700">${esc(c.name)}</span></div></td>
+    <td>${esc(c.company||'—')}</td>
+    <td class="text-muted">${esc(c.email)}</td>
+    <td class="text-muted">${fmtDate(c.created_at)}</td>
+    <td style="color:var(--accent);font-weight:700">${c.request_count}</td>
+    <td><span class="badge badge-${c.status}">${c.status}</span></td>
+    <td class="flex gap-1">
+      <button class="btn btn-primary btn-xs" onclick="chatWith(${c.id},'${esc(c.name)}','${esc(c.company||'')}')">Chat</button>
+      <button class="btn btn-danger  btn-xs" onclick="deleteCustomer(${c.id})">Del</button>
+    </td>
+  </tr>`).join('');
+}
+
+async function deleteCustomer(id) {
+  if (!confirm('Delete this customer and all their data?')) return;
+  await api('DELETE', `/customers/${id}`);
+  toast('Customer deleted.', 'info');
+  loadAdminCustomers();
+  loadAdminOverview();
+}
+
+async function loadAdminRequests(status='all') {
+  loading('admin-req-table', 7);
+  const qs   = status !== 'all' ? `?status=${status}` : '';
+  const reqs = await api('GET', `/requests${qs}`);
+  const tbody = document.getElementById('admin-req-table');
+  if (!reqs.length) { tbody.innerHTML='<tr><td colspan="7" class="text-muted">No requests found.</td></tr>'; return; }
+  tbody.innerHTML = reqs.map(r => `<tr>
+    <td style="font-weight:700">${esc(r.customer_name)}<div class="text-sm text-muted">${esc(r.customer_company||'')}</div></td>
+    <td>${esc(r.service_icon)} ${esc(r.service_name)}</td>
+    <td style="max-width:160px;font-size:12px;color:var(--text-muted)">${esc(r.message).slice(0,70)}${r.message.length>70?'…':''}</td>
+    <td style="font-size:12px;color:var(--warning)">${r.priority}</td>
+    <td><span class="badge badge-${r.status}">${r.status}</span></td>
+    <td class="text-muted">${fmtDate(r.created_at)}</td>
+    <td class="flex gap-1">
+      <button class="btn btn-primary btn-xs" onclick="openUpdateReq(${r.id},'${r.status}','${r.priority}',\`${esc(r.admin_note||'')}\`)">Update</button>
+      <button class="btn btn-danger  btn-xs" onclick="deleteReq(${r.id})">Del</button>
+    </td>
+  </tr>`).join('');
+}
+
+function openUpdateReq(id, status, priority, note) {
+  editingReqId = id;
+  document.getElementById('upd-status').value   = status;
+  document.getElementById('upd-priority').value = priority;
+  document.getElementById('upd-note').value     = note;
+  openModal('modal-update-req');
+}
+
+async function saveReqUpdate() {
+  const status     = document.getElementById('upd-status').value;
+  const priority   = document.getElementById('upd-priority').value;
+  const admin_note = document.getElementById('upd-note').value.trim();
+  await api('PUT', `/requests/${editingReqId}`, { status, priority, admin_note });
+  closeModal('modal-update-req');
+  toast('Request updated!', 'success');
+  loadAdminRequests('all');
+  loadAdminOverview();
+}
+
+async function deleteReq(id) {
+  if (!confirm('Delete this request?')) return;
+  await api('DELETE', `/requests/${id}`);
+  toast('Request deleted.', 'info');
+  loadAdminRequests('all');
+}
+
+// ── Admin Messages ───────────────────────────────────────────────
+async function loadAdminThreads() {
+  const threads = await api('GET', '/messages/threads/all');
+  const list    = document.getElementById('admin-chat-list');
+  if (!threads.length) { list.innerHTML='<div class="text-muted text-sm" style="padding:14px">No conversations yet.</div>'; return; }
+  list.innerHTML = threads.map(t => `
+    <div class="chat-list-item ${adminChatTarget?.id==t.id?'active':''}" onclick='chatWith(${t.id},"${esc(t.name)}","${esc(t.company||t.email)}")'>
+      <div class="chat-list-name">${esc(t.name)}</div>
+      <div class="chat-list-preview">${esc(t.last_message||'No messages')}</div>
+    </div>`).join('');
+}
+
+async function chatWith(id, name, company) {
+  adminChatTarget = { id, name, company };
+  adminNav('messages', null);
+  document.getElementById('admin-chat-header').innerHTML = `
+    <div class="avatar avatar-cyan">${name[0]}</div>
+    <div><div style="font-family:var(--font-head);font-weight:700;font-size:14px">${esc(name)}</div>
+    <div class="text-sm text-muted">${esc(company)}</div></div>`;
+  loadAdminThreads();
+  loadAdminChatMsgs();
+}
+
+async function loadAdminChatMsgs() {
+  if (!adminChatTarget) return;
+  const msgs = await api('GET', `/messages/${adminChatTarget.id}`);
+  const el   = document.getElementById('admin-chat-msgs');
+  if (!msgs.length) { el.innerHTML='<div class="chat-empty">📭<span>No messages yet.</span></div>'; return; }
+  el.innerHTML = msgs.map(m => {
+    const mine = m.from_type === 'admin';
+    return `<div class="chat-msg ${mine?'mine':'theirs'}">
+      <div class="chat-bubble">${esc(m.body)}</div>
+      <div class="chat-time">${fmtDate(m.created_at)}</div>
+    </div>`;
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+async function addUser() {
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+
+    const res = await fetch('/add-user', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name, email })
+    });
+
+    const data = await res.text();
+    alert(data);
+}
+
+async function sendAdminMsg() {
+  if (!adminChatTarget) { toast('Select a customer first.','error'); return; }
+  const input = document.getElementById('admin-msg-input');
+  const body  = input.value.trim();
+  if (!body) return;
+  await api('POST', '/messages', { from_type:'admin', from_id:1, to_type:'customer', to_id: adminChatTarget.id, body });
+  input.value = '';
+  loadAdminChatMsgs();
+}
+
+// ── Admin Services ───────────────────────────────────────────────
+async function loadAdminServices() {
+  const svcs = await api('GET', '/services/all');
+  document.getElementById('admin-services-grid').innerHTML = svcs.map(s => `
+    <div class="service-card">
+      <div class="flex between items-center mb-3">
+        <div class="service-icon">${esc(s.icon)}</div>
+        <div class="flex gap-2">
+          <button class="btn btn-ghost btn-xs" onclick="editService(${s.id},'${esc(s.name)}','${esc(s.icon)}','${esc(s.description)}',${s.price},'${esc(s.delivery)}','${s.category}')">Edit</button>
+          <button class="btn btn-danger btn-xs" onclick="deleteService(${s.id})">Del</button>
+        </div>
+      </div>
+      <div class="service-name">${esc(s.name)}</div>
+      <div class="service-desc">${esc(s.description)}</div>
+      <div class="flex between items-center mt-2">
+        <div class="service-price">${esc(s.currency)}${Number(s.price).toLocaleString()} <span>/ ${esc(s.delivery)}</span></div>
+        <span class="badge badge-active">${s.category}</span>
+      </div>
+    </div>`).join('');
+}
+
+function openServiceModal() {
+  editingSvcId = null;
+  document.getElementById('svc-modal-title').textContent = 'Add Service';
+  document.getElementById('svc-save-btn').textContent    = 'Add Service';
+  ['svc-name','svc-icon','svc-desc','svc-price','svc-delivery'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('svc-cat').value = 'reporting';
+  openModal('modal-service');
+}
+
+function editService(id, name, icon, desc, price, delivery, category) {
+  editingSvcId = id;
+  document.getElementById('svc-modal-title').textContent = 'Edit Service';
+  document.getElementById('svc-save-btn').textContent    = 'Save Changes';
+  document.getElementById('svc-name').value     = name;
+  document.getElementById('svc-icon').value     = icon;
+  document.getElementById('svc-desc').value     = desc;
+  document.getElementById('svc-price').value    = price;
+  document.getElementById('svc-delivery').value = delivery;
+  document.getElementById('svc-cat').value      = category;
+  openModal('modal-service');
+}
+
+async function saveService() {
+  const body = {
+    name:        document.getElementById('svc-name').value.trim(),
+    icon:        document.getElementById('svc-icon').value.trim() || '📊',
+    description: document.getElementById('svc-desc').value.trim(),
+    price:       parseFloat(document.getElementById('svc-price').value) || 0,
+    delivery:    document.getElementById('svc-delivery').value.trim() || '—',
+    category:    document.getElementById('svc-cat').value,
+    currency:    '₹',
+  };
+  if (!body.name || !body.description) { toast('Name and description required.', 'error'); return; }
+  if (editingSvcId) await api('PUT',  `/services/${editingSvcId}`, body);
+  else              await api('POST', '/services', body);
+  closeModal('modal-service');
+  toast('Service saved!', 'success');
+  loadAdminServices();
+  loadCustServices(); // refresh customer view too
+}
+
+async function deleteService(id) {
+  if (!confirm('Delete this service?')) return;
+  await api('DELETE', `/services/${id}`);
+  toast('Service deleted.', 'info');
+  loadAdminServices();
+}
+
+// ════════════════════════════════════════════════════════════════
+// LANDING PAGE
+// ════════════════════════════════════════════════════════════════
+async function loadLandingServices() {
+  try {
+    const svcs = await api('GET', '/services');
+    document.getElementById('landing-services-grid').innerHTML = svcs.map(s => `
+      <div class="service-card">
+        <div class="service-icon">${esc(s.icon)}</div>
+        <div class="service-name">${esc(s.name)}</div>
+        <div class="service-desc">${esc(s.description)}</div>
+        <div class="flex between items-center mt-3">
+          <div class="service-price">${esc(s.currency)}${Number(s.price).toLocaleString()} <span>/ ${esc(s.delivery)}</span></div>
+          <button class="btn btn-primary btn-sm" onclick="showPage('signup')">Get Started →</button>
+        </div>
+      </div>`).join('');
+  } catch {
+    document.getElementById('landing-services-grid').innerHTML = '<div class="text-muted">Could not load services. Make sure the backend is running.</div>';
+  }
+}
+
+function scrollToServices() {
+  document.getElementById('services-section').scrollIntoView({ behavior:'smooth' });
+}
+
+// ════════════════════════════════════════════════════════════════
+// BOOT
+// ════════════════════════════════════════════════════════════════
+showPage('landing');
+loadLandingServices();
+</script>
+</body>
+</html>
